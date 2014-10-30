@@ -18,17 +18,17 @@ import twitter4j.StatusListener;
 
 @Component
 public class TweetListener implements StatusListener {
-    
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    
+
     private final Set<Long> toBeDeleted = new HashSet<>();
-    
+
     @Autowired
     private TweetDAO tweets;
-    
+
     @Autowired
     private UserDAO users;
-    
+
     @Override
     public void onException(Exception e) {
         logger.error("Problem", e);
@@ -39,7 +39,7 @@ public class TweetListener implements StatusListener {
     public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
         long id = statusDeletionNotice.getStatusId();
         logger.info("Deletion notice [id={}]", id);
-        
+
         Tweet tweet = tweets.get(id);
         if (tweet != null) {
             tweets.delete(tweet);
@@ -63,18 +63,24 @@ public class TweetListener implements StatusListener {
     @Transactional
     public void onStatus(Status status) {
         long userId = status.getUser().getId();
-        User user = users.get(userId);
-        if (user == null) {
-            user = User.fromUser(status.getUser());
-            users.save(user);
+        long tweetId = status.getId();
+
+        if (toBeDeleted.contains(tweetId)) {
+            toBeDeleted.remove(tweetId);
+        } else {
+            User user = users.get(userId);
+            if (user == null) {
+                user = User.fromUser(status.getUser());
+                users.save(user);
+            }
+            Tweet tweet = Tweet.fromStatus(status, user);
+            tweets.update(tweet);
         }
-        Tweet tweet = Tweet.fromStatus(status, user);
-        tweets.update(tweet);
     }
 
     @Override
     public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
         logger.warn("Limitation notice: {}", numberOfLimitedStatuses);
     }
-    
+
 }
