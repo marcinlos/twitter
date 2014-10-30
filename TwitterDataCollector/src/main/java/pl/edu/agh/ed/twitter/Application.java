@@ -5,6 +5,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import twitter4j.FilterQuery;
 import twitter4j.StatusListener;
@@ -16,6 +17,7 @@ import twitter4j.TwitterStreamFactory;
 @ImportResource({
     "classpath:spring.xml",
 })
+@EnableScheduling
 public class Application {
 
     public static void main(String[] args) {

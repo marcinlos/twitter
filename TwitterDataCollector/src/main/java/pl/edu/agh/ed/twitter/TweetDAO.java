@@ -13,8 +13,6 @@ public class TweetDAO extends BaseDAO<Long, Tweet> {
         return (List<Tweet>) session().createQuery("from Tweet").list();
     }
     
-    
-
     @Override
     protected Class<Tweet> getEntityClass() {
         return Tweet.class;
