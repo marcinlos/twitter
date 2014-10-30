@@ -52,15 +52,6 @@ class TweetScanner {
 public class Application {
 
     public static void main(String[] args) {
-//        try {
-//            Twitter twitter = new TwitterFactory().getInstance();
-//            TweetScanner scanner = new TweetScanner(twitter);
-//            scanner.search("movies");
-//        } catch (TwitterException e) {
-//            e.printStackTrace(System.err);
-//            System.out.println("Failed to search tweets: " + e.getMessage());
-//        }
-//        System.out.println("Hello!");
         ApplicationContext container = new ClassPathXmlApplicationContext("spring.xml");
         StatusListener listener = container.getBean(StatusListener.class);
 //        TweetListener listener = new TweetListener(null);
