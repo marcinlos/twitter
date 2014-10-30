@@ -52,6 +52,85 @@ public class Tweet {
 
     @Column
     private String country;
+    
+    @Column
+    private long flag;
+    
+    
+    public static final long FF                     = 1 << 0;
+    public static final long BY_FF_TWEETER          = 1 << 1;
+    public static final long FF_RETWEET             = 1 << 2;
+    public static final long RETWEET_OF_FF_TWEETER  = 1 << 3;
+    public static final long BY_RECOMMENDED         = 1 << 4;
+    public static final long RETWEET_OF_RECOMMENDED = 1 << 5;
+    
+    public static final long BITS = 6;
+    public static final long FLAG_MASK = (1 << BITS) - 1;
+    
+    public int getLevel() {
+        return (int) (flag >>> BITS);
+    }
+    
+    public void setLevel(int level) {
+        this.flag = (FLAG_MASK & this.flag) | (level << BITS);
+    }
+    
+    public void addFlag(long flag) {
+        this.flag |= flag;
+    }
+    
+    public boolean checkFlag(long flag) {
+        return (this.flag & flag) != 0;
+    }
+    
+    public boolean isFF() {
+        return checkFlag(FF);
+    }
+    
+    public void markFF() {
+        addFlag(FF);
+    }
+    
+    public boolean isByFFTweeter() {
+        return checkFlag(BY_FF_TWEETER);
+    }
+    
+    public void markByFFTweeter() {
+        addFlag(BY_FF_TWEETER);
+    }
+    
+    public boolean isFFRetweet() {
+        return checkFlag(FF_RETWEET);
+    }
+    
+    public void markFFRetweet() {
+        addFlag(FF_RETWEET);
+    }
+    
+    public boolean isRetweetOfFFTweeter() {
+        return checkFlag(RETWEET_OF_FF_TWEETER);
+    }
+    
+    public void markRetweetOfFFTweeter() {
+        addFlag(RETWEET_OF_FF_TWEETER);
+    }
+    
+    public boolean isByRecommended() {
+        return checkFlag(BY_RECOMMENDED);
+    }
+    
+    public void markByRecommended() {
+        addFlag(BY_RECOMMENDED);
+    }
+    
+    public boolean isRetweetOfRecommended() {
+        return checkFlag(RETWEET_OF_RECOMMENDED);
+    }
+    
+    public void markRetweetOfRecommended() {
+        addFlag(RETWEET_OF_RECOMMENDED);
+    }
+    
 
     public Tweet() {
         // empty parameterless ctor for Hibernate
@@ -116,7 +195,7 @@ public class Tweet {
     public long getRetweetedStatus() {
         return retweetedStatus;
     }
-
+    
     public void setRetweetedStatus(long retweetedStatus) {
         this.retweetedStatus = retweetedStatus;
     }
@@ -152,7 +231,18 @@ public class Tweet {
     public void setCountry(String country) {
         this.country = country;
     }
+    
+    public boolean isRetweet() {
+        return retweetedStatus != 0;
+    }
 
+    public boolean isReplyToStatus() {
+        return inReplyToStatus != -1;
+    }
+    
+    public boolean isReplyToUser() {
+        return inReplyToUser != -1;
+    }
     
     public static Tweet fromStatus(Status status, User user) {
         Tweet tweet = new Tweet();

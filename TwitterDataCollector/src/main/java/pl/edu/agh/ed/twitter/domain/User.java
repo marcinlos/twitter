@@ -55,7 +55,74 @@ public class User {
     @Column
     private String textColor;
     
+    @Column
+    private long flag; 
+    
+    public static final long FF_TWEETER            = 1 << 0;
+    public static final long RECOMMENDED           = 1 << 1;
+    public static final long FF_RETWEETER          = 1 << 2;
+    public static final long RETWEETER             = 1 << 3;
+    public static final long RECOMMENDED_RETWEETER = 1 << 4;
+    
+    public static final long BITS = 5;
+    public static final long FLAG_MASK = (1 << BITS) - 1;
+    
+    public int getLevel() {
+        return (int) (flag >>> BITS);
+    }
+    
+    public void setLevel(int level) {
+        this.flag = (FLAG_MASK & this.flag) | (level << BITS);
+    }
+    
+    public void addFlag(long flag) {
+        this.flag |= flag;
+    }
+    
+    public boolean checkFlag(long flag) {
+        return (this.flag & flag) != 0;
+    }
+    
+    public boolean isFFTweeter() {
+        return checkFlag(FF_TWEETER);
+    }
+    
+    public boolean isRecommended() {
+        return checkFlag(RECOMMENDED);
+    }
+    
+    public boolean isFFRetweeter() {
+        return checkFlag(FF_RETWEETER);
+    }
+    
+    public boolean isRetweeter() {
+        return checkFlag(RETWEETER);
+    }
+    
+    public boolean isRecommendedRetweeter() {
+        return checkFlag(RECOMMENDED_RETWEETER);
+    }
+    
+    public void markFFTweeter() {
+        addFlag(FF_TWEETER);
+    }
 
+    public void markRecommended() {
+        addFlag(RECOMMENDED);
+    }
+    
+    public void markFFRetweeter() {
+        addFlag(FF_RETWEETER);
+    }
+    
+    public void markRetweeter() {
+        addFlag(RETWEETER);
+    }
+    
+    public void markRecommendedRetweeter() {
+        addFlag(RECOMMENDED_RETWEETER);
+    }
+    
     public User() {
         // parameterless ctor for Hibernate
     }
@@ -80,5 +147,135 @@ public class User {
         
         return u;
     }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getScreenName() {
+        return screenName;
+    }
+
+    public void setScreenName(String screenName) {
+        this.screenName = screenName;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public int getFollowers() {
+        return followers;
+    }
+
+    public void setFollowers(int followers) {
+        this.followers = followers;
+    }
+
+    public int getFollowings() {
+        return followings;
+    }
+
+    public void setFollowings(int followings) {
+        this.followings = followings;
+    }
+
+    public int getFavourites() {
+        return favourites;
+    }
+
+    public void setFavourites(int favourites) {
+        this.favourites = favourites;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public int getStatuses() {
+        return statuses;
+    }
+
+    public void setStatuses(int statuses) {
+        this.statuses = statuses;
+    }
+
+    public boolean isVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(boolean isVerified) {
+        this.isVerified = isVerified;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getBackgroundColor() {
+        return backgroundColor;
+    }
+
+    public void setBackgroundColor(String backgroundColor) {
+        this.backgroundColor = backgroundColor;
+    }
+
+    public String getTextColor() {
+        return textColor;
+    }
+
+    public void setTextColor(String textColor) {
+        this.textColor = textColor;
+    }
+
+    public long getFlag() {
+        return flag;
+    }
+
+    public void setFlag(long flag) {
+        this.flag = flag;
+    }
+    
+    
 
 }
