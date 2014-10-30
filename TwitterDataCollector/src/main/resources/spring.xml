@@ -45,6 +45,9 @@
     <property name="hibernateProperties">
       <props>
         <prop key="hibernate.hbm2ddl.auto">update</prop>
+        <prop key="hibernate.connection.CharSet">utf8</prop>
+        <prop key="hibernate.connection.characterEncoding">utf8</prop>
+        <prop key="hibernate.connection.useUnicode">true</prop>
       </props>
     </property>
     <property name="packagesToScan">
