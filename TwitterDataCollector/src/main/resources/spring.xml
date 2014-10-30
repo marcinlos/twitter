@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xmlns:tx="http://www.springframework.org/schema/tx" 
+    xsi:schemaLocation="
+    http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+    http://www.springframework.org/schema/util 
+    http://www.springframework.org/schema/util/spring-util-4.0.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+    http://www.springframework.org/schema/context 
+    http://www.springframework.org/schema/context/spring-context-4.0.xsd
+    http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+  <context:component-scan base-package="pl.edu.agh.ed.twitter" />
+  
+  <util:map id="dbProps">
+    <entry key="db.driver" value="com.mysql.jdbc.Driver" />
+    <entry key="db.jdbcurl" value="jdbc:mysql://127.0.0.1:3306/twitter" />
+    <entry key="db.username" value="root" />
+    <entry key="db.password" value="root" />
+  </util:map>
+
+  <bean id="mysqlDataSource"
+    class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+    <property name="driverClassName" value="${db.driver}" />
+    <property name="url" value="${db.jdbcurl}" />
+    <property name="username" value="${db.username}" />
+    <property name="password" value="${db.password}" />
+  </bean>
+
+  <bean
+    class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="properties" ref="dbProps" />
+  </bean>
+
+  <bean id="hibernateSessionFactory"
+    class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+    <property name="dataSource" ref="mysqlDataSource" />
+    <property name="hibernateProperties">
+      <props>
+        <prop key="hibernate.hbm2ddl.auto">update</prop>
+      </props>
+    </property>
+    <property name="packagesToScan">
+      <value>pl.edu.agh.ed.twitter.domain</value>
+    </property>
+  </bean>
+
+
+  <bean id="txManager"
+    class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+    <property name="sessionFactory" ref="hibernateSessionFactory" />
+  </bean>
+
+  <tx:annotation-driven transaction-manager="txManager" />
+    
+</beans>
