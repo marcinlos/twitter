@@ -2,12 +2,18 @@ package pl.edu.agh.ed.twitter;
 
 import java.util.List;
 
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import twitter4j.FilterQuery;
 import twitter4j.Query;
 import twitter4j.QueryResult;
 import twitter4j.Status;
+import twitter4j.StatusListener;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
-import twitter4j.TwitterFactory;
+import twitter4j.TwitterStream;
+import twitter4j.TwitterStreamFactory;
 import twitter4j.User;
 
 
@@ -46,13 +52,24 @@ class TweetScanner {
 public class Application {
 
     public static void main(String[] args) {
-        try {
-            Twitter twitter = new TwitterFactory().getInstance();
-            TweetScanner scanner = new TweetScanner(twitter);
-            scanner.search("movies");
-        } catch (TwitterException e) {
-            e.printStackTrace(System.err);
-            System.out.println("Failed to search tweets: " + e.getMessage());
-        }
+//        try {
+//            Twitter twitter = new TwitterFactory().getInstance();
+//            TweetScanner scanner = new TweetScanner(twitter);
+//            scanner.search("movies");
+//        } catch (TwitterException e) {
+//            e.printStackTrace(System.err);
+//            System.out.println("Failed to search tweets: " + e.getMessage());
+//        }
+//        System.out.println("Hello!");
+        ApplicationContext container = new ClassPathXmlApplicationContext("spring.xml");
+        StatusListener listener = container.getBean(StatusListener.class);
+//        TweetListener listener = new TweetListener(null);
+
+        TwitterStream stream = TwitterStreamFactory.getSingleton();
+        stream.addListener(listener);
+
+        FilterQuery filter = new FilterQuery();
+        filter.track(new String[]{"#FF"});
+        stream.filter(filter);
     }
 }
