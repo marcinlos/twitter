@@ -21,7 +21,7 @@
   
   <util:map id="dbProps">
     <entry key="db.driver" value="com.mysql.jdbc.Driver" />
-    <entry key="db.jdbcurl" value="jdbc:mysql://127.0.0.1:3306/TwitterV2" />
+    <entry key="db.jdbcurl" value="jdbc:mysql://127.0.0.1:3306/TwitterV2_dbg" />
     <entry key="db.username" value="root" />
     <entry key="db.password" value="root" />
   </util:map>
