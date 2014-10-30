@@ -71,9 +71,11 @@ public class TweetListener implements StatusListener {
             User user = users.get(userId);
             if (user == null) {
                 user = User.fromUser(status.getUser());
+                user.markFFTweeter();
                 users.save(user);
             }
             Tweet tweet = Tweet.fromStatus(status, user);
+            tweet.markFF();
             tweets.update(tweet);
         }
     }

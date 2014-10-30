@@ -19,7 +19,6 @@ import twitter4j.TwitterStreamFactory;
 public class Application {
 
     public static void main(String[] args) {
-//        ApplicationContext container = new ClassPathXmlApplicationContext("spring.xml");
         ApplicationContext ctx = SpringApplication.run(Application.class, args);
         StatusListener listener = ctx.getBean(StatusListener.class);
 
@@ -28,6 +27,7 @@ public class Application {
 
         FilterQuery filter = new FilterQuery();
         filter.track(new String[]{"#FF"});
+        filter.language(new String[] {"en"});
         stream.filter(filter);
     }
 }
