@@ -1,13 +1,14 @@
 package pl.edu.agh.ed.twitter;
 
+import java.io.Serializable;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
 
-@Transactional
-public class BaseDAO {
+//@Transactional
+public abstract class BaseDAO<Id extends Serializable, Entity> {
 
     @Autowired
     private SessionFactory sessionFactory;
@@ -24,16 +25,26 @@ public class BaseDAO {
         return sessionFactory.getCurrentSession();
     }
     
-    public void save(Object object) {
-        session().save(object);
+    public Entity get(Id id) {
+        return (Entity) session().get(getEntityClass(), id);
+    }
+    
+    public void save(Entity entity) {
+        session().save(entity);
     }
 
-    public void delete(Object object) {
-        session().delete(object);
+    public void delete(Entity entity) {
+        session().delete(entity);
     }
-
-    public void update(Object object) {
-        session().saveOrUpdate(object);
+    
+    public void deleteById(Id id) {
+        delete(get(id));
     }
+    
+    public void update(Entity entity) {
+        session().saveOrUpdate(entity);
+    }
+    
+    protected abstract Class<Entity> getEntityClass();
 
 }

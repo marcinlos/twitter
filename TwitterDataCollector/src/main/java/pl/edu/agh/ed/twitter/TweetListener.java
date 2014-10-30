@@ -1,5 +1,10 @@
 package pl.edu.agh.ed.twitter;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +19,10 @@ import twitter4j.StatusListener;
 @Component
 public class TweetListener implements StatusListener {
     
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    
+    private final Set<Long> toBeDeleted = new HashSet<>();
+    
     @Autowired
     private TweetDAO tweets;
     
@@ -22,42 +31,50 @@ public class TweetListener implements StatusListener {
     
     @Override
     public void onException(Exception e) {
-        System.err.println("Problem:");
-        e.printStackTrace(System.err);
+        logger.error("Problem", e);
     }
 
     @Override
+    @Transactional
     public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
+        long id = statusDeletionNotice.getStatusId();
+        logger.info("Deletion notice [id={}]", id);
         
+        Tweet tweet = tweets.get(id);
+        if (tweet != null) {
+            tweets.delete(tweet);
+        } else {
+            toBeDeleted.add(id);
+        }
     }
 
     @Override
     public void onScrubGeo(long userId, long upToStatusId) {
-        
+        logger.info("Request to remove geographic data for {} up to [id={}]",
+                userId, upToStatusId);
     }
 
     @Override
     public void onStallWarning(StallWarning warning) {
-        System.out.println("Stall warning: " + warning);
+        logger.info("Stall warning: queue {}% full", warning.getPercentFull());
     }
 
     @Override
     @Transactional
     public void onStatus(Status status) {
-//        printTweet(status);
         long userId = status.getUser().getId();
-        User user = users.getUser(userId);
+        User user = users.get(userId);
         if (user == null) {
             user = User.fromUser(status.getUser());
             users.save(user);
         }
         Tweet tweet = Tweet.fromStatus(status, user);
-        tweets.save(tweet);
+        tweets.update(tweet);
     }
 
     @Override
     public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
-        System.out.println("Limitation notice - " + numberOfLimitedStatuses);
+        logger.warn("Limitation notice: {}", numberOfLimitedStatuses);
     }
     
 }
