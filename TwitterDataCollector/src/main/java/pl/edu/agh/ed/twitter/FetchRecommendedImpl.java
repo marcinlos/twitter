@@ -117,6 +117,7 @@ public class FetchRecommendedImpl implements FetchRecommended {
     private List<User> getUsers(Collection<String> names) {
         Sleeper limitSleeper = new Sleeper(60, 2);
         Sleeper netSleeper = new Sleeper(30, 1);
+        Sleeper unknownSleeper = new Sleeper(10, 1);
         
         if (names.isEmpty()) {
             return Collections.emptyList();
@@ -143,7 +144,7 @@ public class FetchRecommendedImpl implements FetchRecommended {
                     return Collections.emptyList();
                 } else {
                     logger.error("Unknown error while fetching user", e);
-                    throw new RuntimeException(e);
+                    unknownSleeper.sleep();
                 }
             }
         }
