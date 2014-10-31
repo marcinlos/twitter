@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import pl.edu.agh.ed.twitter.domain.Recommendation;
+import pl.edu.agh.ed.twitter.domain.RecommendationID;
 import pl.edu.agh.ed.twitter.domain.Tweet;
 import pl.edu.agh.ed.twitter.domain.User;
 import twitter4j.ResponseList;
@@ -44,7 +45,8 @@ public class FetchRecommendedImpl implements FetchRecommended {
     private DAO<Long, User> users;
     
     @Autowired
-    private RecommendationDAO recommendations;
+    private RecommendationDAO mainRecommendationsDAO;
+    private DAO<RecommendationID, Recommendation> recommendations;
     
     @Autowired
     private Twitter twitter;
@@ -74,12 +76,14 @@ public class FetchRecommendedImpl implements FetchRecommended {
         session = sessionFactory.openSession();
         tweets = mainTweetsDAO.with(session);
         users = mainUsersDAO.with(session);
+        recommendations = mainRecommendationsDAO.with(session);
     }
     
     private void closeSession() {
         session.close();
         tweets = null;
         users = null;
+        recommendations = null;
     }
     
     private static List<String> extractRecommended(String text) {
@@ -156,7 +160,7 @@ public class FetchRecommendedImpl implements FetchRecommended {
             user.addFlag(User.RECOMMENDED);
             Recommendation rec = new Recommendation(tweet, user);
             users.update(user);
-            recommendations.with(session).update(rec);
+            recommendations.merge(rec);
         }
         tx.commit();
     }
