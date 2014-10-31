@@ -17,6 +17,10 @@ public class Sleeper {
         this.mult = mult;
     }
     
+    public int getDelay() {
+        return delay;
+    }
+    
     public void sleep() {
         try {
             TimeUnit.SECONDS.sleep(delay);
