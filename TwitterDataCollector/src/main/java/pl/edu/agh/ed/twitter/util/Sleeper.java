@@ -1,11 +1,11 @@
-package pl.edu.agh.ed.twitter;
+package pl.edu.agh.ed.twitter.util;
 
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class Sleeper {
+public class Sleeper {
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
     

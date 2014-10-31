@@ -30,6 +30,7 @@ import pl.edu.agh.ed.twitter.domain.Recommendation;
 import pl.edu.agh.ed.twitter.domain.RecommendationID;
 import pl.edu.agh.ed.twitter.domain.Tweet;
 import pl.edu.agh.ed.twitter.domain.User;
+import pl.edu.agh.ed.twitter.util.Sleeper;
 import twitter4j.ResponseList;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
