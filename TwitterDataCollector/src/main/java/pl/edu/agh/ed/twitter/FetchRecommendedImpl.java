@@ -2,7 +2,6 @@ package pl.edu.agh.ed.twitter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -95,27 +94,6 @@ public class FetchRecommendedImpl implements FetchRecommended {
                 }
             }
             chunk = nextChunk();
-        }
-    }
-    
-    class Sleeper {
-        
-        private final Logger logger = LoggerFactory.getLogger(getClass());
-        
-        private int delay;
-        private int mult;
-        
-        public Sleeper(int seconds, int mult) {
-            this.delay = seconds;
-        }
-        
-        public void sleep() {
-            try {
-                TimeUnit.SECONDS.sleep(delay);
-                delay *= mult;
-            } catch (InterruptedException e) {
-                logger.error("During waiting", e);
-            }
         }
     }
     
