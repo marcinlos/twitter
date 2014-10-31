@@ -12,83 +12,39 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import pl.edu.agh.ed.twitter.dao.DAO;
-import pl.edu.agh.ed.twitter.dao.RecommendationDAO;
-import pl.edu.agh.ed.twitter.dao.TweetDAO;
-import pl.edu.agh.ed.twitter.dao.UserDAO;
 import pl.edu.agh.ed.twitter.domain.Recommendation;
-import pl.edu.agh.ed.twitter.domain.RecommendationID;
 import pl.edu.agh.ed.twitter.domain.Tweet;
 import pl.edu.agh.ed.twitter.domain.User;
 import pl.edu.agh.ed.twitter.util.Sleeper;
 import twitter4j.ResponseList;
-import twitter4j.Twitter;
 import twitter4j.TwitterException;
 
 
 @Component
-public class FetchRecommendedImpl implements FetchRecommended {
-    
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    @Autowired
-    private TweetDAO mainTweetsDAO;
-    private DAO<Long, Tweet> tweets;
-    
-    @Autowired
-    private UserDAO mainUsersDAO;
-    private DAO<Long, User> users;
-    
-    @Autowired
-    private RecommendationDAO mainRecommendationsDAO;
-    private DAO<RecommendationID, Recommendation> recommendations;
-    
-    @Autowired
-    private Twitter twitter;
-    
-    @Autowired
-    private SessionFactory sessionFactory;
+public class FetchRecommendedImpl extends AbstractProcessor<Tweet> implements FetchRecommended {
     
     private static final int PER_REQ = 100;
     
     private final Set<String> fetchQueue = new HashSet<>(PER_REQ);
     private final Map<Long, Set<String>> cache = new HashMap<Long, Set<String>>(PER_REQ);
-
-    
-    private Session session;
     
     private final static Pattern pat = Pattern.compile("@\\w+");
     
-    private static final Criterion FF = Restrictions.like("flag", "*%");
-    private static final Criterion NOT_DONE = Restrictions.eq("gotRecommended", false);
-    private static final Criterion TO_FETCH = Restrictions.and(FF, NOT_DONE);
-
-    private static final int CHUNK_SIZE = 1000;
-    
-    private int first = 0;
-    
-    private void beginSession() {
-        session = sessionFactory.openSession();
-        tweets = mainTweetsDAO.with(session);
-        users = mainUsersDAO.with(session);
-        recommendations = mainRecommendationsDAO.with(session);
+    @Override
+    protected Criterion fetchFilter() {
+        Criterion ff = Restrictions.like("flag", "*%");               
+        Criterion notDone  = Restrictions.eq("gotRecommended", false);
+        return Restrictions.and(ff, notDone);
     }
-    
-    private void closeSession() {
-        session.close();
-        tweets = null;
-        users = null;
-        recommendations = null;
+
+    @Override
+    protected int chunkSize() {
+        return 1000;
     }
     
     private static List<String> extractRecommended(String text) {
@@ -99,24 +55,6 @@ public class FetchRecommendedImpl implements FetchRecommended {
             recommended.add(m.group().substring(1));
         }
         return recommended;
-    }
-    
-    @Override
-    public void run() {
-        
-        List<Tweet> chunk = nextChunk();
-        while (! chunk.isEmpty()) {
-            logger.info("Chunk {}-{}", first - chunk.size(), first - 1);
-            
-            for (Tweet tweet : chunk) {
-                try {
-                    process(tweet);
-                } catch (Exception e) {
-                    logger.error("During FF tweet processing", e);
-                }
-            }
-            chunk = nextChunk();
-        }
     }
     
     private List<User> getUsers(Collection<String> names) {
@@ -171,7 +109,8 @@ public class FetchRecommendedImpl implements FetchRecommended {
         tx.commit();
     }
 
-    private void process(Tweet tweet) {
+    @Override
+    protected void process(Tweet tweet) {
         beginSession();
         
         String text = tweet.getText();
@@ -265,13 +204,10 @@ public class FetchRecommendedImpl implements FetchRecommended {
         logger.info("{} tweets, {} missing recommended users", cache.size(), missing);
         cache.clear();
     }
-    
-    public List<Tweet> nextChunk() {
-        beginSession();
-        List<Tweet> list = tweets.getList(first, CHUNK_SIZE, TO_FETCH);
-        first += list.size();
-        closeSession();
-        return list;
-    }
 
+    @Override
+    protected List<Tweet> fetch(int first, int size, Criterion filter) {
+        return tweets.getList(first, size, filter);
+    }
+    
 }
