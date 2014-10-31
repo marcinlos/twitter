@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import pl.edu.agh.ed.twitter.dao.TweetDAO;
+import pl.edu.agh.ed.twitter.dao.UserDAO;
 import pl.edu.agh.ed.twitter.domain.Tweet;
 import pl.edu.agh.ed.twitter.domain.User;
 import twitter4j.StallWarning;

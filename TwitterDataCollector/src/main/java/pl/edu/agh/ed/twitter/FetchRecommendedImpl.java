@@ -22,6 +22,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import pl.edu.agh.ed.twitter.dao.DAO;
+import pl.edu.agh.ed.twitter.dao.RecommendationDAO;
+import pl.edu.agh.ed.twitter.dao.TweetDAO;
+import pl.edu.agh.ed.twitter.dao.UserDAO;
 import pl.edu.agh.ed.twitter.domain.Recommendation;
 import pl.edu.agh.ed.twitter.domain.RecommendationID;
 import pl.edu.agh.ed.twitter.domain.Tweet;

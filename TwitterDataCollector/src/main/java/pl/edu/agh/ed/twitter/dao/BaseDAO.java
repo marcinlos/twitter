@@ -1,4 +1,4 @@
-package pl.edu.agh.ed.twitter;
+package pl.edu.agh.ed.twitter.dao;
 
 import java.io.Serializable;
 
