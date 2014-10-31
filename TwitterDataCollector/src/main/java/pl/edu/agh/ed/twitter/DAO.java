@@ -20,6 +20,8 @@ public interface DAO<Id extends Serializable, Entity> {
     Entity get(Id id);
     
     void save(Entity entity);
+    
+    void merge(Entity entity);
 
     void delete(Entity entity);
     

@@ -65,6 +65,11 @@ public abstract class AbstractDAO<Id extends Serializable, Entity> implements
     public void save(Entity entity) {
         session().save(entity);
     }
+    
+    @Override
+    public void merge(Entity entity) {
+        session().merge(entity);
+    }
 
     @Override
     public void delete(Entity entity) {
