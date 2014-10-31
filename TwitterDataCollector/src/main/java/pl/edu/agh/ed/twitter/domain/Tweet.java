@@ -53,34 +53,51 @@ public class Tweet {
     @Column
     private String country;
     
+    @Column(length = 6)
+    private String flag = "......";
+    
     @Column
-    private long flag;
+    private int level;
     
+    @Column
+    private int ffLevel;
     
-    public static final long FF                     = 1 << 0;
-    public static final long BY_FF_TWEETER          = 1 << 1;
-    public static final long FF_RETWEET             = 1 << 2;
-    public static final long RETWEET_OF_FF_TWEETER  = 1 << 3;
-    public static final long BY_RECOMMENDED         = 1 << 4;
-    public static final long RETWEET_OF_RECOMMENDED = 1 << 5;
+    @Column
+    private boolean gotRetweets = false;
     
-    public static final long BITS = 6;
-    public static final long FLAG_MASK = (1 << BITS) - 1;
+    public static final char MARK = '*';
+    
+    public static final int FF                     = 0;
+    public static final int BY_FF_TWEETER          = 1;
+    public static final int FF_RETWEET             = 2;
+    public static final int RETWEET_OF_FF_TWEETER  = 3;
+    public static final int BY_RECOMMENDED         = 4;
+    public static final int RETWEET_OF_RECOMMENDED = 5;
+    
+    public int getFFLevel() {
+        return ffLevel;
+    }
+    
+    public void setFFLevel(int level) {
+        this.ffLevel = level;
+    }
     
     public int getLevel() {
-        return (int) (flag >>> BITS);
+        return level;
     }
     
     public void setLevel(int level) {
-        this.flag = (FLAG_MASK & this.flag) | (level << BITS);
+        this.level = level;
     }
     
-    public void addFlag(long flag) {
-        this.flag |= flag;
+    public void addFlag(int flag) {
+        char[] cs = this.flag.toCharArray();
+        cs[flag] = MARK;
+        this.flag = String.valueOf(cs);
     }
     
-    public boolean checkFlag(long flag) {
-        return (this.flag & flag) != 0;
+    public boolean checkFlag(int flag) {
+        return this.flag.charAt(flag) == MARK;
     }
     
     public boolean isFF() {
@@ -134,6 +151,31 @@ public class Tweet {
 
     public Tweet() {
         // empty parameterless ctor for Hibernate
+    }
+    
+    public static Tweet fromStatus(Status status, User user) {
+        Tweet tweet = new Tweet();
+
+        tweet.id = status.getId();
+        tweet.text = status.getText();
+        tweet.user = user;
+        tweet.createdAt = new Date(status.getCreatedAt().getTime());
+        tweet.source = status.getSource();
+        tweet.inReplyToStatus = status.getInReplyToStatusId();
+        tweet.inReplyToUser = status.getInReplyToUserId();
+        if (status.isRetweet()) {
+            tweet.retweetedStatus = status.getRetweetedStatus().getId();
+        }
+        tweet.retweetCount = status.getRetweetCount();
+        tweet.favoriteCount = status.getFavoriteCount();
+        tweet.language = status.getLang();
+        
+        if (status.getPlace() != null) {
+            Place place = status.getPlace();
+            tweet.country = place.getName();
+        }
+        
+        return tweet;
     }
     
     public Long getId() {
@@ -244,29 +286,12 @@ public class Tweet {
         return inReplyToUser != -1;
     }
     
-    public static Tweet fromStatus(Status status, User user) {
-        Tweet tweet = new Tweet();
-
-        tweet.id = status.getId();
-        tweet.text = status.getText();
-        tweet.user = user;
-        tweet.createdAt = new Date(status.getCreatedAt().getTime());
-        tweet.source = status.getSource();
-        tweet.inReplyToStatus = status.getInReplyToStatusId();
-        tweet.inReplyToUser = status.getInReplyToUserId();
-        if (status.isRetweet()) {
-            tweet.retweetedStatus = status.getRetweetedStatus().getId();
-        }
-        tweet.retweetCount = status.getRetweetCount();
-        tweet.favoriteCount = status.getFavoriteCount();
-        tweet.language = status.getLang();
-        
-        if (status.getPlace() != null) {
-            Place place = status.getPlace();
-            tweet.country = place.getName();
-        }
-        
-        return tweet;
+    public boolean hasGotRetweets() {
+        return gotRetweets;
     }
-
+    
+    public void setGotRetweets(boolean got) {
+        gotRetweets = got;
+    }
+    
 }

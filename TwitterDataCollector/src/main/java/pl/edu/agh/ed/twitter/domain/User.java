@@ -55,32 +55,39 @@ public class User {
     @Column
     private String textColor;
     
+    @Column(length = 5)
+    private String flag = "....."; 
+    
     @Column
-    private long flag; 
+    private int level;
     
-    public static final long FF_TWEETER            = 1 << 0;
-    public static final long RECOMMENDED           = 1 << 1;
-    public static final long FF_RETWEETER          = 1 << 2;
-    public static final long RETWEETER             = 1 << 3;
-    public static final long RECOMMENDED_RETWEETER = 1 << 4;
+    @Column
+    private boolean gotTweets;
     
-    public static final long BITS = 5;
-    public static final long FLAG_MASK = (1 << BITS) - 1;
+    public static final char MARK = '*';
+    
+    public static final int FF_TWEETER            = 0;
+    public static final int RECOMMENDED           = 1;
+    public static final int FF_RETWEETER          = 2;
+    public static final int RETWEETER             = 3;
+    public static final int RECOMMENDED_RETWEETER = 4;
     
     public int getLevel() {
-        return (int) (flag >>> BITS);
+        return level;
     }
     
     public void setLevel(int level) {
-        this.flag = (FLAG_MASK & this.flag) | (level << BITS);
+        this.level = level;
     }
     
-    public void addFlag(long flag) {
-        this.flag |= flag;
+    public void addFlag(int flag) {
+        char[] cs = this.flag.toCharArray();
+        cs[flag] = MARK;
+        this.flag = String.valueOf(cs);
     }
     
-    public boolean checkFlag(long flag) {
-        return (this.flag & flag) != 0;
+    public boolean checkFlag(int flag) {
+        return this.flag.charAt(flag) == MARK;
     }
     
     public boolean isFFTweeter() {
@@ -123,6 +130,7 @@ public class User {
         addFlag(RECOMMENDED_RETWEETER);
     }
     
+
     public User() {
         // parameterless ctor for Hibernate
     }
@@ -268,14 +276,21 @@ public class User {
         this.textColor = textColor;
     }
 
-    public long getFlag() {
+    public String getFlag() {
         return flag;
     }
 
-    public void setFlag(long flag) {
+    public void setFlag(String flag) {
         this.flag = flag;
     }
     
+    public boolean hasGotTweets() {
+        return gotTweets;
+    }
+    
+    public void setGotTweets(boolean got) {
+        gotTweets = got;
+    }
     
 
 }
