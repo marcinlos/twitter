@@ -47,6 +47,14 @@ public class FetchRecommendedImpl extends AbstractProcessor<Tweet> implements Fe
         return 1000;
     }
     
+    @Override
+    public void run() {
+        super.run();
+        beginSession();
+        clearFetchQueue();
+        closeSession();
+    }
+    
     private static List<String> extractRecommended(String text) {
         List<String> recommended = new ArrayList<>();
         Matcher m = pat.matcher(text);
