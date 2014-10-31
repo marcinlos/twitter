@@ -33,10 +33,12 @@ public abstract class AbstractProcessor<T> extends SessionManager implements Run
                     process(item);
                 } catch (Exception e) {
                     logger.error("During tweet processing", e);
+                    logger.error("Skipping tweet");
                 }
             }
             chunk = nextChunk();
         }
+        logger.info("No more chunks");
     }
     
     protected abstract void process(T item);
@@ -44,7 +46,7 @@ public abstract class AbstractProcessor<T> extends SessionManager implements Run
 
     public List<T> nextChunk() {
         beginSession();
-        List<T> list = fetch(first, chunkSize(), fetchFilter());//
+        List<T> list = fetch(first, chunkSize(), fetchFilter());
         first += list.size();
         closeSession();
         return list;
