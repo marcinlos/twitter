@@ -2,6 +2,7 @@ package pl.edu.agh.ed.twitter;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
@@ -25,5 +26,10 @@ public class GraphBuilder {
         fetcher.run();
 //        Twitter twitter = TwitterFactory.getSingleton();
         
+    }
+    
+    @Bean
+    public Twitter getTwitter() {
+        return TwitterFactory.getSingleton();
     }
 }
