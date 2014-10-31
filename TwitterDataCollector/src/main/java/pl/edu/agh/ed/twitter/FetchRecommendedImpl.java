@@ -1,7 +1,10 @@
 package pl.edu.agh.ed.twitter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +40,8 @@ public class FetchRecommendedImpl implements FetchRecommended {
     
     @Autowired
     private SessionFactory sessionFactory;
+    
+    private Session session;
     
     private final static Pattern pat = Pattern.compile("@\\w+");
     
@@ -85,6 +90,7 @@ public class FetchRecommendedImpl implements FetchRecommended {
         List<Tweet> chunk = nextChunk();
         while (! chunk.isEmpty()) {
             logger.info("Chunk {}-{}", first - chunk.size(), first - 1);
+            session = sessionFactory.openSession();
             
             for (Tweet tweet : chunk) {
                 try {
@@ -93,6 +99,7 @@ public class FetchRecommendedImpl implements FetchRecommended {
                     logger.error("During FF tweet processing", e);
                 }
             }
+            session.close();
             chunk = nextChunk();
         }
     }
@@ -122,8 +129,41 @@ public class FetchRecommendedImpl implements FetchRecommended {
         }
     }
     
+    
+    private List<User> getUsers(List<String> names) {
+        Sleeper limitSleeper = new Sleeper(60, 2);
+        Sleeper netSleeper = new Sleeper(30, 1);
+        
+        if (names.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        while (true) {
+            try {
+                String[] array = names.toArray(new String[0]);
+                ResponseList<twitter4j.User> response = twitter.lookupUsers(array);
+                List<User> users = new ArrayList<>();
+                for (twitter4j.User u : response) {
+                    users.add(User.fromUser(u));
+                }
+                return users;
+            } catch (TwitterException e) {
+                if (e.exceededRateLimitation()) {
+                    logger.error("Exceeded rate limitation");
+                    limitSleeper.sleep();
+                } else if (e.isCausedByNetworkIssue()) {
+                    logger.error("Network issues: {}", e);
+                    netSleeper.sleep();
+                } else {
+                    logger.error("Unknown error while fetching user", e);
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+    
     private String formatUser(User user) {
-        StringBuilder sb = new StringBuilder("User {");
+        StringBuilder sb = new StringBuilder("User {\n");
         sb.append("   id         = " + user.getId() + ",\n");
         sb.append("   name       = " + user.getName() + ",\n");
         sb.append("   screenName = " + user.getScreenName() + ",\n");
@@ -135,25 +175,58 @@ public class FetchRecommendedImpl implements FetchRecommended {
         sb.append("}");
         return sb.toString();
     }
+    
+    private void outputUser(User user) {
+        logger.info(":\n" + formatUser(user));
+    }
+    
+    private List<User> userByName(String name) {
+        return users.with(session).getList(Restrictions.eq("screenName", name));
+    }
 
     private void process(Tweet tweet) {
         String text = tweet.getText();
         List<String> recommended = extractRecommended(text);
-//        logger.info("Tweet [id={}]:", tweet.getId());
-//        for (String name : recommended) {
-//            logger.info("    -{}", name);
+        logger.info("Tweet [id={}], {} recommended:", tweet.getId(), recommended.size());
+        
+        List<String> toFetch = new ArrayList<>();
+        List<User> all = new ArrayList<>();
+        for (String name : recommended) {
             
+            List<User> us = userByName(name);
             
-//            User user = getUser(name);
-//            if (user != null) {
-//                logger.info(formatUser(user));
-//            }
-//            try {
-//                TimeUnit.SECONDS.sleep(10);
-//            } catch (InterruptedException e) {
-//                
-//            }
-//        }
+            if (us.isEmpty()) {
+                toFetch.add(name);
+            } else {
+                User user = us.get(0);
+                all.add(user);
+            }
+        }
+        logger.info("{} present, {} to fetch", all.size(), toFetch.size());
+        
+        List<User> fetched = getUsers(toFetch);
+        
+        for (User user : fetched) {
+            toFetch.remove(user.getScreenName());
+        }
+        
+        logger.info("{} fetched, {} missing", fetched.size(), toFetch.size());
+        for (String name: toFetch) {
+            logger.info(" - {}", name);
+        }
+        
+        all.addAll(fetched);
+        
+        for (User user : all) {
+            user.addFlag(User.RECOMMENDED);
+//            users.with(session).update(user);
+        }
+        
+        try {
+            TimeUnit.SECONDS.sleep(10);
+        } catch (InterruptedException e) {
+            
+        }
     }
     
     public List<Tweet> nextChunk() {

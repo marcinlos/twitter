@@ -60,7 +60,7 @@ public abstract class AbstractDAO<Id extends Serializable, Entity> implements
     public Entity get(Id id) {
         return (Entity) session().get(getEntityClass(), id);
     }
-
+    
     @Override
     public void save(Entity entity) {
         session().save(entity);
