@@ -65,6 +65,9 @@ public class Tweet {
     @Column
     private boolean gotRetweets = false;
     
+    @Column
+    private boolean gotRecommended = false;
+    
     public static final char MARK = '*';
     
     public static final int FF                     = 0;
@@ -292,6 +295,14 @@ public class Tweet {
     
     public void setGotRetweets(boolean got) {
         gotRetweets = got;
+    }
+    
+    public boolean hasGotRecommended() {
+        return gotRecommended;
+    }
+    
+    public void setGotRecommended(boolean got) {
+        gotRecommended = got;
     }
     
 }

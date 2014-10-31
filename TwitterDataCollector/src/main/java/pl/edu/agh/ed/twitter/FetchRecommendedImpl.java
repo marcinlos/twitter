@@ -1,15 +1,20 @@
 package pl.edu.agh.ed.twitter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
 import org.slf4j.Logger;
@@ -17,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import pl.edu.agh.ed.twitter.domain.Recommendation;
 import pl.edu.agh.ed.twitter.domain.Tweet;
 import pl.edu.agh.ed.twitter.domain.User;
 import twitter4j.ResponseList;
@@ -30,16 +36,27 @@ public class FetchRecommendedImpl implements FetchRecommended {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    private TweetDAO tweets;
+    private TweetDAO mainTweetsDAO;
+    private DAO<Long, Tweet> tweets;
     
     @Autowired
-    private UserDAO users;
+    private UserDAO mainUsersDAO;
+    private DAO<Long, User> users;
+    
+    @Autowired
+    private RecommendationDAO recommendations;
     
     @Autowired
     private Twitter twitter;
     
     @Autowired
     private SessionFactory sessionFactory;
+    
+    private static final int PER_REQ = 100;
+    
+    private final Set<String> fetchQueue = new HashSet<>(PER_REQ);
+    private final Map<Long, Set<String>> cache = new HashMap<Long, Set<String>>(PER_REQ);
+
     
     private Session session;
     
@@ -53,6 +70,18 @@ public class FetchRecommendedImpl implements FetchRecommended {
     
     private int first = 0;
     
+    private void beginSession() {
+        session = sessionFactory.openSession();
+        tweets = mainTweetsDAO.with(session);
+        users = mainUsersDAO.with(session);
+    }
+    
+    private void closeSession() {
+        session.close();
+        tweets = null;
+        users = null;
+    }
+    
     private static List<String> extractRecommended(String text) {
         List<String> recommended = new ArrayList<>();
         Matcher m = pat.matcher(text);
@@ -63,34 +92,12 @@ public class FetchRecommendedImpl implements FetchRecommended {
         return recommended;
     }
     
-    private void test() throws TwitterException {
-        
-        
-        String[] names = {"apaner5984an23nzm54", "null"};
-        ResponseList<twitter4j.User> users = twitter.lookupUsers(names);
-        for (twitter4j.User u : users) {
-            if (u == null) {
-                logger.info("Dupa, null");
-            } else {
-                User user = User.fromUser(u);
-                logger.info(formatUser(user));
-            }
-        }
-    }
-    
     @Override
     public void run() {
-//        
-//        try {
-//            test();
-//        } catch (TwitterException e) {
-//            e.printStackTrace();
-//        }
         
         List<Tweet> chunk = nextChunk();
         while (! chunk.isEmpty()) {
             logger.info("Chunk {}-{}", first - chunk.size(), first - 1);
-            session = sessionFactory.openSession();
             
             for (Tweet tweet : chunk) {
                 try {
@@ -99,38 +106,11 @@ public class FetchRecommendedImpl implements FetchRecommended {
                     logger.error("During FF tweet processing", e);
                 }
             }
-            session.close();
             chunk = nextChunk();
         }
     }
     
-    private User getUser(String name) {
-        Sleeper limitSleeper = new Sleeper(60, 2);
-        Sleeper netSleeper = new Sleeper(30, 1);
-        
-        while (true) {
-            try {
-                twitter4j.User user = twitter.showUser(name);
-                return User.fromUser(user);
-            } catch (TwitterException e) {
-                if (e.resourceNotFound()) {
-                    logger.error("User not found: {}", name);
-                    return null;
-                } else if (e.exceededRateLimitation()) {
-                    logger.error("Exceeded rate limitation");
-                    limitSleeper.sleep();
-                } else if (e.isCausedByNetworkIssue()) {
-                    logger.error("Network issues: {}", e);
-                    netSleeper.sleep();
-                } else {
-                    logger.error("Unknown error while fetching user", e);
-                }
-            }
-        }
-    }
-    
-    
-    private List<User> getUsers(List<String> names) {
+    private List<User> getUsers(Collection<String> names) {
         Sleeper limitSleeper = new Sleeper(60, 2);
         Sleeper netSleeper = new Sleeper(30, 1);
         
@@ -162,35 +142,31 @@ public class FetchRecommendedImpl implements FetchRecommended {
         }
     }
     
-    private String formatUser(User user) {
-        StringBuilder sb = new StringBuilder("User {\n");
-        sb.append("   id         = " + user.getId() + ",\n");
-        sb.append("   name       = " + user.getName() + ",\n");
-        sb.append("   screenName = " + user.getScreenName() + ",\n");
-        sb.append("   followers  = " + user.getFollowers() + ",\n");
-        sb.append("   follows    = " + user.getFollowings() + ",\n");
-        sb.append("   language   = " + user.getLanguage() + ",\n");
-        sb.append("   favourites = " + user.getFavourites() + ",\n");
-        sb.append("   tweets     = " + user.getStatuses() + ",\n");
-        sb.append("}");
-        return sb.toString();
-    }
-    
-    private void outputUser(User user) {
-        logger.info(":\n" + formatUser(user));
-    }
-    
     private List<User> userByName(String name) {
-        return users.with(session).getList(Restrictions.eq("screenName", name));
+        return users.getList(Restrictions.eq("screenName", name));
+    }
+    
+    
+    private void saveRecommendations(Tweet tweet, Iterable<User> all) {
+        Transaction tx = session.beginTransaction();
+        for (User user : all) {
+            user.addFlag(User.RECOMMENDED);
+            Recommendation rec = new Recommendation(tweet, user);
+            users.update(user);
+            recommendations.with(session).update(rec);
+        }
+        tx.commit();
     }
 
     private void process(Tweet tweet) {
-        String text = tweet.getText();
-        List<String> recommended = extractRecommended(text);
-        logger.info("Tweet [id={}], {} recommended:", tweet.getId(), recommended.size());
+        beginSession();
         
-        List<String> toFetch = new ArrayList<>();
-        List<User> all = new ArrayList<>();
+        String text = tweet.getText();
+        Set<String> recommended = new HashSet<>(extractRecommended(text));
+        
+        Set<String> toFetch = new HashSet<>();
+        Set<User> all = new HashSet<>();
+        
         for (String name : recommended) {
             
             List<User> us = userByName(name);
@@ -202,40 +178,86 @@ public class FetchRecommendedImpl implements FetchRecommended {
                 all.add(user);
             }
         }
-        logger.info("{} present, {} to fetch", all.size(), toFetch.size());
         
-        List<User> fetched = getUsers(toFetch);
-        
-        for (User user : fetched) {
-            toFetch.remove(user.getScreenName());
-        }
-        
-        logger.info("{} fetched, {} missing", fetched.size(), toFetch.size());
-        for (String name: toFetch) {
-            logger.info(" - {}", name);
-        }
-        
-        all.addAll(fetched);
-        
-        for (User user : all) {
-            user.addFlag(User.RECOMMENDED);
-//            users.with(session).update(user);
-        }
-        
-        try {
-            TimeUnit.SECONDS.sleep(10);
-        } catch (InterruptedException e) {
+        saveRecommendations(tweet, all);
+        if (! toFetch.isEmpty()) {
+            queue(toFetch);
+            cache.put(tweet.getId(), toFetch);
+        } else {
+            tweet.setGotRecommended(true);
             
+            Transaction tx = session.beginTransaction();
+            tweets.update(tweet);
+            tx.commit();
         }
+        
+        closeSession();
+    }
+    
+    private Map<String, User> byNames(Collection<User> users) {
+        Map<String, User> data = new HashMap<>(users.size());
+        
+        for (User user : users) {
+            String name = user.getScreenName().toLowerCase();
+            // logger.info("{} -> {}", name, user.getId());
+            data.put(name, user);
+        }
+        
+        return data;
+    }
+    
+    private void queue(Collection<String> names) {
+        if (names.size() + fetchQueue.size() > PER_REQ) {
+            logger.info("Clearing fetch queue...");
+            clearFetchQueue();
+        }
+        fetchQueue.addAll(names);
+        logger.info("Fetch queue: {}/{}", fetchQueue.size(), PER_REQ);
+    }
+    
+    
+    private void clearFetchQueue() {
+        int total = fetchQueue.size();
+        Map<String, User> users = byNames(getUsers(fetchQueue));
+        fetchQueue.clear();
+        
+        logger.info("Managed to fetch {} of {} users", users.size(), total);
+        
+        int missing = 0;
+        for (Entry<Long, Set<String>> pair : cache.entrySet()) {
+            long id = pair.getKey();
+            Set<String> recommended = pair.getValue();
+            
+            List<User> toAdd = new ArrayList<>();
+
+            // logger.info("Tweet [id={}]:", id);
+            for (String name : recommended) {
+                User user = users.get(name.toLowerCase());
+                
+                if (user == null) {
+                    logger.info("[id={}] Missing user: {}", id, name);
+                    ++ missing;
+                } else {
+                    toAdd.add(user);
+                }
+            }
+            Tweet tweet = tweets.get(id);
+            saveRecommendations(tweet, toAdd);
+            tweet.setGotRecommended(true);
+            
+            Transaction tx = session.beginTransaction();
+            tweets.update(tweet);
+            tx.commit();
+        }
+        logger.info("{} tweets, {} missing recommended users", cache.size(), missing);
+        cache.clear();
     }
     
     public List<Tweet> nextChunk() {
-        Session session = sessionFactory.openSession();
-        
-        List<Tweet> list = tweets.with(session).getList(first, CHUNK_SIZE, TO_FETCH);
+        beginSession();
+        List<Tweet> list = tweets.getList(first, CHUNK_SIZE, TO_FETCH);
         first += list.size();
-        
-        session.close();
+        closeSession();
         return list;
     }
 
