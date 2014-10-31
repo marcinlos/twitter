@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 
-//@Component
+@Component
 public class TweetCountReporter {
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
