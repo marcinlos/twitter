@@ -63,7 +63,7 @@ public class FetchRecommendedImpl implements FetchRecommended {
     private final static Pattern pat = Pattern.compile("@\\w+");
     
     private static final Criterion FF = Restrictions.like("flag", "*%");
-    private static final Criterion NOT_DONE = Restrictions.eq("gotRetweets", false);
+    private static final Criterion NOT_DONE = Restrictions.eq("gotRecommended", false);
     private static final Criterion TO_FETCH = Restrictions.and(FF, NOT_DONE);
 
     private static final int CHUNK_SIZE = 1000;
@@ -134,6 +134,9 @@ public class FetchRecommendedImpl implements FetchRecommended {
                 } else if (e.isCausedByNetworkIssue()) {
                     logger.error("Network issues: {}", e);
                     netSleeper.sleep();
+                } else if (e.resourceNotFound()) {
+                    logger.warn("Resource not found");
+                    return Collections.emptyList();
                 } else {
                     logger.error("Unknown error while fetching user", e);
                     throw new RuntimeException(e);
