@@ -53,6 +53,16 @@ public abstract class BaseDAO<Id extends Serializable, Entity> {
                 .list();
     }
     
+    @SuppressWarnings("unchecked")
+    public List<Entity> getList(int first, int max, Criterion... predicates) {
+        return (List<Entity>) session()
+                .createCriteria(getEntityClass())
+                .add(Restrictions.and(predicates))
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .list();
+    }
+    
     public ScrollableResults getCursor(ScrollMode mode, Criterion... predicates) {
         return session()
                 .createCriteria(getEntityClass())
