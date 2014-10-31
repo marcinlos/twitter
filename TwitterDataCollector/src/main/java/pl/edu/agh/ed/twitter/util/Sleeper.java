@@ -14,6 +14,7 @@ public class Sleeper {
     
     public Sleeper(int seconds, int mult) {
         this.delay = seconds;
+        this.mult = mult;
     }
     
     public void sleep() {
