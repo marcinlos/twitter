@@ -7,14 +7,12 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import twitter4j.RateLimitStatus;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 
 
-@Component
 public class LimitRateHelper {
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -25,8 +23,30 @@ public class LimitRateHelper {
         DEPLETED
     }
 
-    @Autowired
     private Twitter twitter;
+    
+    @Autowired
+    public LimitRateHelper(Twitter twitter) {
+        this.twitter = twitter;
+    }
+    
+    public Map<String, RateLimitStatus> getLimits() {
+        Sleeper netSleeper = new Sleeper(30, 1);
+        while (true) {
+            try {
+                return twitter.getRateLimitStatus();
+            } catch (TwitterException e) {
+                if (e.exceededRateLimitation()) {
+                    logger.error("Exceeded rate limitation while asking for rate "
+                            + "limit status");
+                    return null;
+                } else if (e.isCausedByNetworkIssue()) {
+                    logger.error("Network issues:", e);
+                    netSleeper.sleep();
+                }
+            }
+        }
+    }
     
     private int findResetDelay(String name) {
         Sleeper netSleeper = new Sleeper(30, 1);
@@ -51,6 +71,10 @@ public class LimitRateHelper {
     
     public void waitForReset(String name) {
         int delay = findResetDelay(name);
+        waitForReset(delay);
+    }
+    
+    public void waitForReset(int delay) {
         logger.info("Waiting for reset {}s (+5)", delay);
         try {
             TimeUnit.SECONDS.sleep(delay + 5);

@@ -13,8 +13,6 @@ public abstract class AbstractProcessor<T> extends SessionManager implements Run
     
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    @Autowired
-    protected Twitter twitter;
     
     private int first = 0;
     

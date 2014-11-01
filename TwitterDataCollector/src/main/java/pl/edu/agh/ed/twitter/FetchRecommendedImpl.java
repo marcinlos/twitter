@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import org.hibernate.Transaction;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import pl.edu.agh.ed.twitter.domain.Recommendation;
@@ -22,6 +23,7 @@ import pl.edu.agh.ed.twitter.domain.Tweet;
 import pl.edu.agh.ed.twitter.domain.User;
 import pl.edu.agh.ed.twitter.util.Sleeper;
 import twitter4j.ResponseList;
+import twitter4j.Twitter;
 import twitter4j.TwitterException;
 
 
@@ -34,6 +36,9 @@ public class FetchRecommendedImpl extends AbstractProcessor<Tweet> implements Fe
     private final Map<Long, Set<String>> cache = new HashMap<Long, Set<String>>(PER_REQ);
     
     private final static Pattern pat = Pattern.compile("@\\w+");
+    
+    @Autowired
+    protected Twitter twitter;
     
     @Override
     protected Criterion fetchFilter() {

@@ -3,6 +3,8 @@ package pl.edu.agh.ed.twitter;
 import java.util.Collections;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+
 import org.hibernate.Transaction;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
@@ -10,15 +12,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import pl.edu.agh.ed.twitter.domain.Tweet;
 import pl.edu.agh.ed.twitter.domain.User;
-import pl.edu.agh.ed.twitter.util.LimitRateHelper;
 import pl.edu.agh.ed.twitter.util.Sleeper;
+import pl.edu.agh.ed.twitter.util.TwitterManager;
 import twitter4j.Status;
+import twitter4j.Twitter;
 import twitter4j.TwitterException;
 
 public abstract class BasicTweetFetcher extends AbstractProcessor<User> {
     
     @Autowired
-    protected LimitRateHelper limitHelper;
+    protected TwitterProvider provider;
+    
+    protected TwitterManager twitters;
+    
+    protected Twitter twitter;
+    
+    @PostConstruct
+    public void initialize() {
+        twitters = new TwitterManager(provider.getTwitters());
+        twitter = twitters.getFor(CALL);
+    }
 
     @Override
     protected Criterion fetchFilter() {
@@ -33,6 +46,7 @@ public abstract class BasicTweetFetcher extends AbstractProcessor<User> {
     
     protected abstract void processUser(User user);
 
+    private static final String CALL = "/statuses/user_timeline";
     
     @Override
     protected int chunkSize() {
@@ -40,19 +54,18 @@ public abstract class BasicTweetFetcher extends AbstractProcessor<User> {
     }
     
     private List<Status> getUserStatuses(long userId) {
-        Sleeper netSleeper = new Sleeper(30, 1);
-        Sleeper unknownSleeper = new Sleeper(10, 1);
+        Sleeper netSleeper = new Sleeper(10, 1);
+        Sleeper unknownSleeper = new Sleeper(5, 1);
         int unknownCount = 0;
         int maxUnknownRetries = 3;
-
+        
         while (true) {
             try {
                 return twitter.getUserTimeline(userId);
             } catch (TwitterException e) {
                 if (e.exceededRateLimitation()) {
                     logger.error("Exceeded rate limitation");
-                    limitHelper.printRateLimits();
-                    limitHelper.waitForReset("/statuses/user_timeline");
+                    twitter = twitters.getFor(CALL);
                 } else if (e.isCausedByNetworkIssue()) {
                     logger.error("Network issues:", e);
                     netSleeper.sleep();
@@ -64,6 +77,7 @@ public abstract class BasicTweetFetcher extends AbstractProcessor<User> {
                         logger.error(
                                 "Error 401, most likely uid={} does not exist",
                                 userId);
+                        throw new RuntimeException(e);
                     } else {
                         logger.error("Unknown error while fetching user", e);
                     }
@@ -78,7 +92,6 @@ public abstract class BasicTweetFetcher extends AbstractProcessor<User> {
                     }
                     logger.error("Waiting {} s ...", unknownSleeper.getDelay());
                     unknownSleeper.sleep();
-                    
                 }
             }
 
