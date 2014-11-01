@@ -14,6 +14,7 @@ import pl.edu.agh.ed.twitter.domain.RecommendationID;
 import pl.edu.agh.ed.twitter.domain.Tweet;
 import pl.edu.agh.ed.twitter.domain.User;
 
+
 public class SessionManager {
 
     @Autowired

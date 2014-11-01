@@ -2,10 +2,14 @@ package pl.edu.agh.ed.twitter;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Profile;
+
+import twitter4j.Twitter;
+import twitter4j.TwitterFactory;
 
 @Configuration
 @ComponentScan(basePackages = "pl.edu.agh.ed.twitter")
@@ -19,4 +23,8 @@ public class JobRunner {
         job.run();
     }
 
+    @Bean
+    public Twitter getTwitter() {
+        return TwitterFactory.getSingleton();
+    }
 }

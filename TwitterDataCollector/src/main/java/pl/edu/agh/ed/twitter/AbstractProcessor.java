@@ -5,16 +5,12 @@ import java.util.List;
 import org.hibernate.criterion.Criterion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 public abstract class AbstractProcessor<T> extends SessionManager implements Job {
     
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     private int first = 0;
-    
-    @Autowired
-    private SessionManager sessionManager;
     
     protected abstract Criterion fetchFilter();
     protected abstract int chunkSize();

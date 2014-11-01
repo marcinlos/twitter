@@ -16,6 +16,7 @@ import org.hibernate.Transaction;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import pl.edu.agh.ed.twitter.domain.Recommendation;
@@ -27,6 +28,7 @@ import twitter4j.Twitter;
 import twitter4j.TwitterException;
 
 
+@Profile("FetchRecommended")
 @Component
 public class FetchRecommended extends AbstractProcessor<Tweet> {
     

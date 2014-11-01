@@ -76,7 +76,7 @@ public class Tweet {
     public static final int RETWEET_OF_FF_TWEETER  = 3;
     public static final int BY_RECOMMENDED         = 4;
     public static final int RETWEET_OF_RECOMMENDED = 5;
-    
+
     public int getFFLevel() {
         return ffLevel;
     }

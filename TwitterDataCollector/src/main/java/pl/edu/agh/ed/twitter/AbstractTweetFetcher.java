@@ -37,7 +37,8 @@ public abstract class AbstractTweetFetcher extends AbstractProcessor<User> {
     protected Criterion fetchFilter() {
         Criterion ff = Restrictions.like("flag", flagPattern());               
         Criterion notDone  = Restrictions.eq("gotTweets", false);
-        return Restrictions.and(ff, notDone);
+        Criterion notProblem = Restrictions.ne("cantGetTweets", true);
+        return Restrictions.and(ff, notDone, notProblem);
     }
     
     protected abstract String flagPattern();
@@ -77,7 +78,7 @@ public abstract class AbstractTweetFetcher extends AbstractProcessor<User> {
                         logger.error(
                                 "Error 401, most likely uid={} does not exist",
                                 userId);
-                        throw new RuntimeException(e);
+                        return null;
                     } else {
                         logger.error("Unknown error while fetching user", e);
                     }
@@ -112,18 +113,23 @@ public abstract class AbstractTweetFetcher extends AbstractProcessor<User> {
         // entity in Tweets objects we'll be likely persisting here
         user = users.get(user.getId());
         
-        for (Status status : stats) {
-            long id = status.getId();
-            Tweet tweet = tweets.get(id);
-            
-            if (tweet == null) {
-                tweet = Tweet.fromStatus(status, user);
+        if (stats == null) {
+            logger.warn("Marking user @{} as problematic", user.getScreenName());
+            user.setCantGetTweets(true);
+        } else {
+            for (Status status : stats) {
+                long id = status.getId();
+                Tweet tweet = tweets.get(id);
+                
+                if (tweet == null) {
+                    tweet = Tweet.fromStatus(status, user);
+                }
+                
+                processTweet(tweet, user);
+                tweets.update(tweet);
             }
-            
-            processTweet(tweet, user);
-            tweets.update(tweet);
+            processUser(user);
         }
-        processUser(user);
         users.update(user);
         
         tx.commit();

@@ -64,6 +64,9 @@ public class User {
     @Column
     private boolean gotTweets;
     
+    @Column
+    private boolean cantGetTweets = false;
+    
     public static final char MARK = '*';
     
     public static final int FF_TWEETER            = 0;
@@ -292,5 +295,11 @@ public class User {
         gotTweets = got;
     }
     
-
+    public boolean cantGetTweets() {
+        return cantGetTweets;
+    }
+    
+    public void setCantGetTweets(boolean cant) {
+        this.cantGetTweets = cant;
+    }
 }
