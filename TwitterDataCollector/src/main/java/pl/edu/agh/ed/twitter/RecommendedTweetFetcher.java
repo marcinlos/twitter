@@ -8,8 +8,7 @@ import pl.edu.agh.ed.twitter.domain.User;
 
 @Profile("recommended")
 @Component
-public class RecommendedTweetFetcher extends BasicTweetFetcher implements
-        TweetFetcher {
+public class RecommendedTweetFetcher extends AbstractTweetFetcher {
 
     @Override
     protected String flagPattern() {

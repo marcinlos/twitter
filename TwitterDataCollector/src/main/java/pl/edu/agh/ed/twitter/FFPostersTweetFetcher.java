@@ -8,8 +8,7 @@ import pl.edu.agh.ed.twitter.domain.User;
 
 @Profile("FF")
 @Component
-public class FFPostersTweetFetcher extends BasicTweetFetcher implements
-        TweetFetcher {
+public class FFPostersTweetFetcher extends AbstractTweetFetcher {
 
     @Override
     protected String flagPattern() {

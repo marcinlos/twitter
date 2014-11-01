@@ -11,13 +11,12 @@ import org.springframework.context.annotation.Profile;
 @ComponentScan(basePackages = "pl.edu.agh.ed.twitter")
 @ImportResource({ "classpath:spring.xml" })
 @Profile({ "FF", "recommended" })
-public class TweetFetcherApp extends BaseApp {
+public class JobRunner {
 
     public static void main(String[] args) {
-        ApplicationContext ctx = SpringApplication.run(TweetFetcherApp.class, args);
-        Runnable fetcher = ctx.getBean(TweetFetcher.class);
-        
-        fetcher.run();
+        ApplicationContext ctx = SpringApplication.run(JobRunner.class, args);
+        Job job = ctx.getBean(Job.class);
+        job.run();
     }
 
 }

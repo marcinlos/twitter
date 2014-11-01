@@ -2,6 +2,7 @@ package pl.edu.agh.ed.twitter;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import pl.edu.agh.ed.twitter.dao.DAO;
@@ -32,18 +33,28 @@ public class SessionManager {
     
     protected Session session;
 
-    protected void beginSession() {
+    public void openSession() {
         session = sessionFactory.openSession();
+
         tweets = mainTweetsDAO.with(session);
         users = mainUsersDAO.with(session);
         recommendations = mainRecommendationsDAO.with(session);
     }
 
-    protected void closeSession() {
+    public void closeSession() {
         session.close();
+
         tweets = null;
         users = null;
         recommendations = null;
+    }
+    
+    public Session getCurrentSession() {
+        return session;
+    }
+    
+    public Transaction beginTransaction() {
+        return session.beginTransaction();
     }
 
 }

@@ -18,7 +18,7 @@ import twitter4j.Status;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 
-public abstract class BasicTweetFetcher extends AbstractProcessor<User> {
+public abstract class AbstractTweetFetcher extends AbstractProcessor<User> {
     
     @Autowired
     protected TwitterProvider provider;
@@ -94,7 +94,6 @@ public abstract class BasicTweetFetcher extends AbstractProcessor<User> {
                     unknownSleeper.sleep();
                 }
             }
-
         }
     }
 
@@ -106,7 +105,7 @@ public abstract class BasicTweetFetcher extends AbstractProcessor<User> {
     }
     
     private void processStatusList(User user, List<Status> stats) {
-        beginSession();
+        openSession();
         Transaction tx = session.beginTransaction();
         
         // Hibernate doesn't like it if we use detached user object as an

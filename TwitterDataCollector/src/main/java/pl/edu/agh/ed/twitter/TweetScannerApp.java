@@ -14,14 +14,12 @@ import twitter4j.TwitterStreamFactory;
 
 @Configuration
 @ComponentScan(basePackages = "pl.edu.agh.ed.twitter")
-@ImportResource({
-    "classpath:spring.xml",
-})
+@ImportResource({ "classpath:spring.xml" })
 @EnableScheduling
-public class Application {
+public class TweetScannerApp {
 
     public static void main(String[] args) {
-        ApplicationContext ctx = SpringApplication.run(Application.class, args);
+        ApplicationContext ctx = SpringApplication.run(TweetScannerApp.class, args);
         StatusListener listener = ctx.getBean(StatusListener.class);
 
         TwitterStream stream = TwitterStreamFactory.getSingleton();
