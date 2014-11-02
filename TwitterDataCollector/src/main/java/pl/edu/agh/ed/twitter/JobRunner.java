@@ -14,7 +14,11 @@ import twitter4j.TwitterFactory;
 @Configuration
 @ComponentScan(basePackages = "pl.edu.agh.ed.twitter")
 @ImportResource({ "classpath:spring.xml" })
-@Profile({ "FF", "recommended" })
+@Profile({ 
+    "FF", 
+    "recommended", 
+    "FetchFFRetweets" 
+})
 public class JobRunner {
 
     public static void main(String[] args) {
