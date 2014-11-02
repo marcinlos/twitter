@@ -68,6 +68,9 @@ public class Tweet {
     @Column
     private boolean gotRecommended = false;
     
+    @Column
+    private boolean cantGetRetweets = false;
+    
     public static final char MARK = '*';
     
     public static final int FF                     = 0;
@@ -303,6 +306,14 @@ public class Tweet {
     
     public void setGotRecommended(boolean got) {
         gotRecommended = got;
+    }
+    
+    public boolean cantGetRetweets() {
+        return cantGetRetweets;
+    }
+    
+    public void setCantGetRetweets(boolean cant) {
+        this.cantGetRetweets = cant;
     }
     
 }
