@@ -11,17 +11,27 @@ public abstract class AbstractProcessor<T> extends SessionManager implements Job
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     private int first = 0;
+    private int firstVirt = 0;
     
     protected abstract Criterion fetchFilter();
     protected abstract int chunkSize();
 
+    protected void beforeJob() {
+        // empty
+    } 
+
+    protected void afterJob() {
+        // empty
+    }
+
     @Override
     public void run() {
-        
+        beforeJob();
+
         List<T> chunk = nextChunk();
         while (! chunk.isEmpty()) {
-            logger.info("Chunk {}-{}", first - chunk.size(), first - 1);
-            
+            logger.info("Chunk {}-{}", firstVirt - chunk.size(), firstVirt - 1);
+
             for (T item: chunk) {
                 try {
                     process(item);
@@ -32,6 +42,7 @@ public abstract class AbstractProcessor<T> extends SessionManager implements Job
             }
             chunk = nextChunk();
         }
+        afterJob();
         logger.info("No more chunks");
     }
     
@@ -46,6 +57,7 @@ public abstract class AbstractProcessor<T> extends SessionManager implements Job
         openSession();
         List<T> list = fetch(first, chunkSize(), fetchFilter());
         first += list.size();
+        firstVirt += list.size();
         closeSession();
         return list;
     }
